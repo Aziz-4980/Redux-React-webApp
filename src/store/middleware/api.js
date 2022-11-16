@@ -1,42 +1,32 @@
-import axios from 'axios';
-import * as actions from '../api';
-
-
+import axios from "axios";
+import * as actions from "../api";
 
 const api = ({ dispatch }) => next => async action => {
+  if (action.type !== actions.apiCallBegan.type) return next(action);
 
-    if (action.type !== actions.apiCallBegan.type) return next(action);
+  const { url, method, data, onStart, onSuccess, onError } = action.payload;
 
+  if (onStart) dispatch({ type: onStart });
 
-    const { url, onSuccess, onStart, onError, method, data } = action.payload;
-    if (onStart)
-        dispatch({ type: onStart })
-    next(action);
-    try {
-        const request = await axios.request({
-            baseURL: 'http://localhost:9001/api',
-            url,
-            method,
-            data
-        });
-        // console.log('before', request);
+  next(action);
 
-        //genral
-        dispatch(actions.apiCallSuccess(request.data));
-        //specific
-        if (onSuccess)
-            dispatch({ type: onSuccess, payload: request.data });
-        // console.log('after', request);
-    } catch (error) {
-
-        //general
-        dispatch(actions.apiCallFailed(error.message))
-
-        //specific
-        if (onError)
-            dispatch({ type: onError, payload: error.message })
-
-    }
-}
+  try {
+    const response = await axios.request({
+      baseURL: "http://localhost:9001/api",
+      url,
+      method,
+      data
+    });
+    // General
+    dispatch(actions.apiCallSuccess(response.data));
+    // Specific
+    if (onSuccess) dispatch({ type: onSuccess, payload: response.data });
+  } catch (error) {
+    // General
+    dispatch(actions.apiCallFailed(error.message));
+    // Specific
+    if (onError) dispatch({ type: onError, payload: error.message });
+  }
+};
 
 export default api;
